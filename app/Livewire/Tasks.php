@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
+use App\Services\TaskService;
+
 class Tasks extends Component
 {
 
@@ -28,24 +30,15 @@ class Tasks extends Component
 
     public function addTask()
     {
-        $this->validate([
+        $data = $this->validate([
             "task_name" => "required",
-            "contributors" => "required"
+            "description" => "nullable",
+            "contributors" => "required",
         ]);
 
-        DB::beginTransaction();
+        $task = new TaskService();
+        $task->store($data);
 
-        $task = Task::create([
-            "name" => $this->task_name,
-            "description" => $this->description,
-        ]);
-
-        $task->users()->attach($this->contributors);
-        // dd($task->users);
-        DB::commit();
-
-        $this->reset("task_name", "contributors");
-        $this->reset("show_add_task_modal");
         $this->redirect('/');
     }
 
@@ -55,17 +48,15 @@ class Tasks extends Component
         $this->show_add_todo_modal = true;
     }
 
-    public function addTodo() {
+    public function addTodo()
+    {
+        $data = $this->validate([
+            "task_id" => "required",
+            "todo_name" => "required",
+        ]);
 
-        DB::beginTransaction();
-        $task = Task::findOrFail($this->task_id);
-
-        $todo = new Todo();
-        $todo->task_id = $this->task_id;
-        $todo->name = $this->todo_name;
-        $task->todos()->save($todo);
-
-        DB::commit();
+        $task = new TaskService();
+        $task->todo_store($data);
 
         $this->reset("task_id");
         $this->reset("show_add_todo_modal");
@@ -116,7 +107,11 @@ class Tasks extends Component
         DB::beginTransaction();
 
         $task->users()->detach();
-        // $task->todos()->detach();
+
+        foreach ($task->todos as $todo) {
+            $todo->delete();
+        }
+
         $task->delete();
 
         DB::commit();
