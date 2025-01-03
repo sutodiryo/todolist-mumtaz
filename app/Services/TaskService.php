@@ -25,6 +25,19 @@ class TaskService
 
     }
 
+    public function update_task($data)
+    {
+        DB::beginTransaction();
+        $task = Task::findOrFail($data['task_id']);
+
+        $task->update([
+            "name" => $data['e_name'],
+            "description" => $data['e_description'],
+        ]);
+
+        DB::commit();
+    }
+
     public function todo_store($data)
     {
         DB::beginTransaction();
@@ -38,4 +51,19 @@ class TaskService
         DB::commit();
     }
 
+
+    public function delete_task($task)
+    {
+        DB::beginTransaction();
+
+        $task->users()->detach();
+
+        foreach ($task->todos as $todo) {
+            $todo->delete();
+        }
+
+        $task->delete();
+
+        DB::commit();
+    }
 }

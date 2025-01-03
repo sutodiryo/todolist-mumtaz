@@ -77,18 +77,14 @@ class Tasks extends Component
 
     public function editTask()
     {
-        DB::beginTransaction();
-        $task = Task::findOrFail($this->task_id);
-        $this->validate([
-            "e_name" => "required"
+        $data = $this->validate([
+            "task_id" => "required",
+            "e_name" => "required",
+            "e_description" => "nullable"
         ]);
 
-        $task->update([
-            "name" => $this->e_name,
-            "description" => $this->e_description,
-        ]);
-
-        DB::commit();
+        $task = new TaskService();
+        $task->update_task($data);
 
         $this->redirect('/');
     }
@@ -104,17 +100,9 @@ class Tasks extends Component
 
     public function deleteTask(Task $task)
     {
-        DB::beginTransaction();
+        $taskService = new TaskService();
+        $taskService->delete_task($task);
 
-        $task->users()->detach();
-
-        foreach ($task->todos as $todo) {
-            $todo->delete();
-        }
-
-        $task->delete();
-
-        DB::commit();
         $this->redirect('/');
     }
 
